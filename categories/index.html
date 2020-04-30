@@ -6,13 +6,15 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Hexo</title>
+  <title>categories | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:title" content="categories">
+<meta property="og:url" content="http://yoursite.com/categories/index.html">
 <meta property="og:site_name" content="Hexo">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-04-30T12:09:27.000Z">
+<meta property="article:modified_time" content="2020-04-30T12:13:09.871Z">
 <meta property="article:author" content="表弟">
 <meta name="twitter:card" content="summary">
   
@@ -136,102 +138,27 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-    <article id="post-IO优化基础知识" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+            <article id="page-" class="article article-type-page " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/30/IO%E4%BC%98%E5%8C%96%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">IO优化基础知识</a>
+    <h1 class="article-title" itemprop="name">
+      categories
     </h1>
   
 
         
-        <a href="/2020/04/30/IO%E4%BC%98%E5%8C%96%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="archive-article-date">
-  	<time datetime="2020-04-30T12:04:56.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-30</time>
+        <a href="/categories/index.html" class="archive-article-date">
+  	<time datetime="2020-04-30T12:09:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-30</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>在工作中，我们很多工程师对 I/O 的认识其实比较模糊，认为 I/O 就是应用程序执行 read()、write() 这样的一些操作，并不清楚这些操作背后的整个流程是怎样的。我们先从整体上来了解下Linux系统IO Stack有多么的复杂，下图是整个Linux系统的IO Stack:</p>
-<p><img src="Linux-storage-stack-diagram_v4.0-1.png" alt=""></p>
-<p>我们一般意义上的IO，主要指磁盘和文件系统的管理，这是操作系统最核心的功能之一。磁盘为系统提供了最基本的持久化存储。文件系统则在磁盘的基础上，提供了一个用来管理文件的树状结构。那么，磁盘和文件系统是怎么工作的呢？又有哪些指标可以衡量它们的性能呢？我们先来看看，Linux 文件系统的工作原理</p>
-<h3 id="Linux文件系统基本概念"><a href="#Linux文件系统基本概念" class="headerlink" title="Linux文件系统基本概念"></a>Linux文件系统基本概念</h3><h4 id="VFS"><a href="#VFS" class="headerlink" title="VFS"></a>VFS</h4><p>为了支持各种不同的文件系统，Linux 内核在用户进程和文件系统的中间，又引入了一个抽象层，也就是虚拟文件系统 VFS（Virtual File System）。VFS 定义了一组所有文件系统都支持的数据结构和标准接口。这样，用户进程和内核中的其他子系统，只需要跟 VFS 提供的统一接口进行交互就可以了，而不需要再关心底层各种文件系统的实现细节。</p>
-<p>在 VFS 的下方，Linux 支持各种各样的文件系统，如 Ext4、XFS、NFS 等等。按照存储位置的不同，这些文件系统可以分为三类。</p>
-<ul>
-<li>第一类是基于磁盘的文件系统，也就是把数据直接存储在计算机本地挂载的磁盘中。常见的 Ext4、F2FS等，都是这类文件系统。</li>
-<li>第二类是基于内存的文件系统，也就是我们常说的虚拟文件系统。这类文件系统，不需要任何磁盘分配存储空间，但会占用内存。我们经常用到的 /proc 文件系统，其实就是一种最常见的虚拟文件系统。此外，/sys 文件系统也属于这一类，主要向用户空间导出层次化的内核对象。</li>
-<li>第三类是网络文件系统，也就是用来访问其他计算机数据的文件系统，比如NFS等。</li>
-</ul>
-<p>对于 Android 来说，现在普遍使用的是 Linux 常用的 ext4 文件系统。华为率先在 EMUI 5.0 以后就使用 F2FS 取代 ext4，Google 也在最新的旗舰手机 Pixel 3 使用了 F2FS 文件系统。Flash-Friendly File System 是三星是专门为 NAND 闪存芯片开发的文件系统。F2FS 文件系统在写性能方面比 ext4 更快，随机写可以优化&gt;20%，不足之处在于可靠性方面出现过一些问题。</p>
-<p>磁盘文件系统，要先挂载到 VFS 目录树中的某个子目录（称为挂载点），然后才能访问其中的文件。拿第一类，也就是基于磁盘的文件系统为例，在安装系统时，要先挂载一个根目录（/），在根目录下再把其他文件系统（比如其他的磁盘分区、/proc 文件系统、/sys 文件系统、NFS 等）挂载进来。</p>
-<h4 id="Ext4"><a href="#Ext4" class="headerlink" title="Ext4"></a>Ext4</h4><p>磁盘在执行ext4文件系统格式化时，会形成如下布局：</p>
-<p><img src="fs_layout.jpg" alt=""></p>
-<h4 id="块组"><a href="#块组" class="headerlink" title="块组"></a>块组</h4><p><img src="bg_layout.jpg" alt=""></p>
-<ul>
-<li><p>超级块: 是用于存储文件系统自身元数据的核心结构。其中的信息包括空闲与已使用块的数目、块长度、 当前文件系统状态（在启动时用于检测前一次崩溃）、各种时间戳（例如，上一次装载文件系统 的时间以及上一次写入操作的时间）。它还包括一个表示文件系统类型的魔数，这样mount例程 能够确认文件系统的类型是否正确。内核只使用第一个块组的超级块读取文件系统的元信息，即 使在几个超级块中都有超级块，也是如此。</p>
-</li>
-<li><p>组描述符: 包含的信息反映了文件系统中各个块组的状态，例如，块组中空闲块和inode的数目。每个块组 都包含了文件系统中所有块组的组描述符信息。</p>
-</li>
-<li><p>数据块位图和inode位图: 用于保存长的比特位串。这些结构中的每个比特位都对应于一个数据块或inode，用于表示对应的数据块 或inode是空闲的，还是被使用中。</p>
-</li>
-<li><p>inode表: 包含了块组中所有的inode，inode用于保存文件系统中与各个文件和目录相关的所有元数据。</p>
-</li>
-<li><p>数据块: 包含了文件系统中的文件的有用数据。</p>
-</li>
-</ul>
-<h4 id="索引节点和目录项"><a href="#索引节点和目录项" class="headerlink" title="索引节点和目录项"></a>索引节点和目录项</h4><p>在 Linux 中一切皆文件。不仅普通的文件和目录，就连块设备、套接字、管道等，也都要通过统一的文件系统来管理。为了方便管理，Linux 文件系统为每个文件都分配两个数据结构，索引节点（index node）和目录项（directory entry）。它们主要用来记录文件的元信息和目录结构。</p>
-<ul>
-<li><p>索引节点，简称为 inode，用来记录文件的元数据，比如 inode 编号、文件大小、访问权限、修改日期、数据的位置等。索引节点和文件一一对应，它跟文件内容一样，都会被持久化存储到磁盘中。所以索引节点同样占用磁盘空间。</p>
-</li>
-<li><p>目录项，简称为 dentry，用来记录文件的名字、索引节点指针以及与其他目录项的关联关系。多个关联的目录项，就构成了文件系统的目录结构。换句话说，索引节点是每个文件的唯一标志，而目录项维护的正是文件系统的树状结构。目录项和索引节点的关系是多对一，你可以简单理解为，一个文件可以有多个别名。<strong>不过</strong>，不同于索引节点，目录项是由内核维护的一个内存数据结构，所以通常也被叫做目录项缓存。</p>
-</li>
-</ul>
-<p>注意：</p>
-<p>1.目录项不是目录，目录也是一种文件，是文件就有对应的索引节点，索引节点同样占用磁盘空间。<br>2.目录项与索引节点的对应关系是多对一关系(例如：通过硬链接为文件创建的别名，就会对应不同的目录项，不过这些目录项本质上还是链接同一个文件，所以，它们的索引节点相同。)，但是目录的索引节点和目录项目只能是一对一。</p>
-<p>真实案例：sdcardfs由于目录的目录项和索引节点多对一造成的系统死锁，系统Hung住。</p>
-<p><a href="https://github.com/novelinux/toolbox/blob/master/debug/ramdump/example1.md" target="_blank" rel="noopener">https://github.com/novelinux/toolbox/blob/master/debug/ramdump/example1.md</a></p>
-<p>索引节点和目录项纪录了文件的元数据，以及文件间的目录关系，那么具体来说，文件数据到底是怎么存储的呢？是不是直接写到磁盘中就好了呢？</p>
-<p>实际上，磁盘读写的最小单位是扇区，然而扇区只有 512B 大小，如果每次都读写这么小的单位，效率一定很低。所以，文件系统又把连续的扇区组成了逻辑块，然后每次都以逻辑块为最小单元，来管理数据。常见的逻辑块大小为 4KB，也就是由连续的 8 个扇区组成。如下图所示：</p>
-<p><img src="dentry_inode.png" alt=""></p>
-<h3 id="文件系统IO"><a href="#文件系统IO" class="headerlink" title="文件系统IO"></a>文件系统IO</h3><p>把文件系统挂载到挂载点后，就能通过挂载点，再去访问它管理的文件了。VFS 提供了一组标准的文件访问接口。这些接口以系统调用的方式，提供给应用程序使用。</p>
-<p>文件读写方式的各种差异，导致 I/O 的分类多种多样。最常见的有，缓冲与非缓冲 I/O、直接与非直接 I/O、阻塞与非阻塞 I/O、同步与异步 I/O 等。</p>
-<ul>
-<li>第一种，根据是否利用标准库缓存，可以把文件 I/O 分为缓冲 I/O 与非缓冲 I/O。</li>
-</ul>
-<p>缓冲 I/O，是指利用标准库缓存来加速文件的访问，而标准库内部再通过系统调度访问文件。非缓冲 I/O，是指直接通过系统调用来访问文件，不再经过标准库缓存。注意，这里所说的“缓冲”，是指标准库内部实现的缓存。比方说，你可能见到过，很多程序遇到换行时才真正输出，而换行前的内容，其实就是被标准库暂时缓存了起来。无论缓冲 I/O 还是非缓冲 I/O，它们最终还是要经过系统调用来访问文件。而根据上一节内容，我们知道，系统调用后，还会通过页缓存，来减少磁盘的 I/O 操作。</p>
-<ul>
-<li>第二，根据是否利用操作系统的页缓存，可以把文件 I/O 分为直接 I/O 与非直接 I/O。</li>
-</ul>
-<p>直接 I/O，是指跳过操作系统的页缓存，直接跟文件系统交互来访问文件。非直接 I/O 正好相反，文件读写时，先要经过系统的页缓存，然后再由内核或额外的系统调用，真正写入磁盘。想要实现直接 I/O，需要你在系统调用中，指定 O_DIRECT 标志。如果没有设置过，默认的是非直接 I/O。不过要注意，直接 I/O、非直接 I/O，本质上还是和文件系统交互。如果是在数据库等场景中，你还会看到，跳过文件系统读写磁盘的情况，也就是我们通常所说的裸 I/O。</p>
-<ul>
-<li>第三，根据应用程序是否阻塞自身运行，可以把文件 I/O 分为阻塞 I/O 和非阻塞 I/O：</li>
-</ul>
-<p>所谓阻塞 I/O，是指应用程序执行 I/O 操作后，如果没有获得响应，就会阻塞当前线程，自然就不能执行其他任务。所谓非阻塞 I/O，是指应用程序执行 I/O 操作后，不会阻塞当前的线程，可以继续执行其他的任务，随后再通过轮询或者事件通知的形式，获取调用的结果。比方说，访问管道或者网络套接字时，设置 O_NONBLOCK 标志，就表示用非阻塞方式访问；而如果不做任何设置，默认的就是阻塞访问。</p>
-<ul>
-<li>第四，根据是否等待响应结果，可以把文件 I/O 分为同步和异步 I/O：</li>
-</ul>
-<p>所谓同步 I/O，是指应用程序执行 I/O 操作后，要一直等到整个 I/O 完成后，才能获得 I/O 响应。所谓异步 I/O，是指应用程序执行 I/O 操作后</p>
-<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><h4 id="容量"><a href="#容量" class="headerlink" title="容量"></a>容量</h4><p>对文件系统来说，最常见的一个问题就是空间不足。用 df 命令，就能查看文件系统的磁盘空间使用情况。比如：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">whyred:&#x2F; # df -h &#x2F;data&#x2F;</span><br><span class="line">Filesystem      Size  Used Avail Use% Mounted on</span><br><span class="line">&#x2F;dev&#x2F;block&#x2F;dm-0  50G   20G   30G  40% &#x2F;data</span><br></pre></td></tr></table></figure>
-
-<p>不过有时候，碰到了空间不足的问题，可是用 df 查看磁盘空间后，却发现剩余空间还有很多。这是怎么回事呢？不知道你还记不记得，刚才我强调的一个细节。除了文件数据，索引节点也占用磁盘空间。你可以给 df 命令加上 -i 参数，查看索引节点的使用情况，如下所示：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">whyred:&#x2F; # df -ih &#x2F;data&#x2F;</span><br><span class="line">Filesystem     Inodes  IUsed  IFree IUse% Mounted on</span><br><span class="line">&#x2F;dev&#x2F;block&#x2F;dm-0  3.2M    59K   3.1M    2% &#x2F;data</span><br></pre></td></tr></table></figure>
-
-<p>索引节点的容量，（也就是 Inode 个数）是在格式化磁盘时设定好的，一般由格式化工具自动生成。当你发现索引节点空间不足，但磁盘空间充足时，很可能就是过多小文件导致的。所以，一般来说，删除这些小文件，或者把它们移动到索引节点充足的其他磁盘中，就可以解决这个问题。</p>
-<h4 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h4><p>可以用 free 或 vmstat，来观察页缓存的大小。free 输出的 Cache是页缓存和可回收 Slab 缓存的和，可以从 /proc/meminfo ，直接得到它们的大小：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">whyred:&#x2F; # cat &#x2F;proc&#x2F;meminfo</span><br><span class="line"># Memory in buffer cache, so relatively temporary storage for raw disk blocks. This shouldn&#39;t get very large.</span><br><span class="line">Buffers:           59704 kB</span><br><span class="line"># Memory in the pagecache (Diskcache and Shared Memory)</span><br><span class="line">Cached:          1700040 kB</span><br><span class="line"># Memory that is present within main memory, but also in the swapfile. (If memory is needed this area does not need to be swapped out AGAIN because it is already in the swapfile. This saves I&#x2F;O and increases performance if machine runs short on memory.)</span><br><span class="line">SwapCached:         5308 kB</span><br><span class="line">...</span><br><span class="line"># The part of the Slab that might be reclaimed (such as caches)</span><br><span class="line">SReclaimable:      92544 kB</span><br><span class="line"># The part of the Slab that can&#39;t be reclaimed under memory pressure</span><br><span class="line">SUnreclaim:       160464 kB</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<p>文件系统中的目录项和索引节点缓存，又该如何观察呢？实际上，内核使用 Slab 机制，管理目录项和索引节点的缓存。/proc/meminfo 只给出了 Slab 的整体大小，具体到每一种 Slab 缓存，还要查看 /proc/slabinfo 这个文件。比如，运行下面的命令，你就可以得到，所有目录项和各种文件系统索引节点的缓存情况：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat &#x2F;proc&#x2F;slabinfo | grep -E &#39;^#|dentry|inode&#39;</span><br></pre></td></tr></table></figure>
-
-<p>但是一般Android手机系统不会打开对应内核的配置，所以我们一般也不容易看到。</p>
-
+        
       
 
       
@@ -239,41 +166,68 @@
     <div class="article-info article-info-index">
       
       
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">IO</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/IO//" class="article-tag-list-link color3">IO</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/04/30/IO%E4%BC%98%E5%8C%96%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">展开全文 >></a>
-        </p>
       
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/categories/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
+
+  
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -293,83 +247,14 @@
 
 
 
-
   
-    <article id="post-hello-world" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/30/hello-world/">Hello World</a>
-    </h1>
   
 
-        
-        <a href="/2020/04/30/hello-world/" class="archive-article-date">
-  	<time datetime="2020-04-30T10:35:30.028Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-30</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/04/30/hello-world/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
+  
 
   
+
   
 
 
@@ -392,7 +277,7 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
+		isHome: false,
 		isPost: false,
 		isArchive: false,
 		isTag: false,
